@@ -11,10 +11,15 @@ import (
 	"time"
 
 	"github.com/virtuxa/tz_task_manager/internal/config"
+	"github.com/virtuxa/tz_task_manager/internal/database"
 	"github.com/virtuxa/tz_task_manager/internal/httpapi"
+	"github.com/virtuxa/tz_task_manager/internal/migration"
 )
 
-const shutdownTimeout = 10 * time.Second
+const (
+	shutdownTimeout = 10 * time.Second
+	startupTimeout  = 10 * time.Second
+)
 
 func main() {
 	if err := run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -26,6 +31,19 @@ func main() {
 func run() error {
 	cfg, err := config.Load()
 	if err != nil {
+		return err
+	}
+
+	startupContext, cancelStartup := context.WithTimeout(context.Background(), startupTimeout)
+	defer cancelStartup()
+
+	database, err := database.OpenMySQL(startupContext, cfg.MySQLDSN)
+	if err != nil {
+		return err
+	}
+	defer database.Close()
+
+	if err := migration.Apply(startupContext, database); err != nil {
 		return err
 	}
 

@@ -6,17 +6,38 @@ import (
 	"strings"
 )
 
-const httpAddressEnv = "HTTP_ADDR"
+const (
+	httpAddressEnv = "HTTP_ADDR"
+	mysqlDSNEnv    = "MYSQL_DSN"
+)
 
 type Config struct {
 	HTTPAddress string
+	MySQLDSN    string
 }
 
 func Load() (Config, error) {
-	httpAddress := strings.TrimSpace(os.Getenv(httpAddressEnv))
-	if httpAddress == "" {
-		return Config{}, fmt.Errorf("%s is required", httpAddressEnv)
+	httpAddress, err := requiredEnv(httpAddressEnv)
+	if err != nil {
+		return Config{}, err
 	}
 
-	return Config{HTTPAddress: httpAddress}, nil
+	mysqlDSN, err := requiredEnv(mysqlDSNEnv)
+	if err != nil {
+		return Config{}, err
+	}
+
+	return Config{
+		HTTPAddress: httpAddress,
+		MySQLDSN:    mysqlDSN,
+	}, nil
+}
+
+func requiredEnv(name string) (string, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return "", fmt.Errorf("%s is required", name)
+	}
+
+	return value, nil
 }
