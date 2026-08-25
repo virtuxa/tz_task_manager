@@ -6,57 +6,7 @@ import (
 	"fmt"
 	"net/mail"
 	"strings"
-	"time"
 )
-
-const (
-	maxEmailLength = 254
-	maxNameLength  = 100
-)
-
-var (
-	ErrInvalidInput       = errors.New("invalid input")
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrNotFound           = errors.New("user not found")
-)
-
-type User struct {
-	ID           int64
-	Email        string
-	PasswordHash string
-	Name         string
-	CreatedAt    time.Time
-}
-
-type RegisterInput struct {
-	Email    string
-	Password string
-	Name     string
-}
-
-type LoginInput struct {
-	Email    string
-	Password string
-}
-
-type LoginResult struct {
-	AccessToken string
-}
-
-type Repository interface {
-	Create(context.Context, User) (User, error)
-	FindByEmail(context.Context, string) (User, error)
-}
-
-type PasswordManager interface {
-	Hash(string) (string, error)
-	Compare(string, string) error
-}
-
-type TokenIssuer interface {
-	Issue(int64) (string, error)
-}
 
 type Service struct {
 	repository Repository

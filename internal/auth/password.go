@@ -1,21 +1,10 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"unicode/utf8"
 
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	minPasswordLength = 8
-	maxPasswordLength = 72
-)
-
-var (
-	ErrInvalidPassword    = errors.New("invalid password")
-	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 type PasswordManager struct {

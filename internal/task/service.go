@@ -2,102 +2,12 @@ package task
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/virtuxa/tz_task_manager/internal/team"
 )
-
-const (
-	defaultListLimit   = 20
-	maxListLimit       = 100
-	maxTitleLength     = 255
-	maxDescriptionSize = 5000
-)
-
-var (
-	ErrInvalidInput    = errors.New("invalid task input")
-	ErrForbidden       = errors.New("task action is forbidden")
-	ErrNotFound        = errors.New("task not found")
-	ErrVersionConflict = errors.New("task version conflict")
-)
-
-type Status string
-
-const (
-	StatusTodo       Status = "todo"
-	StatusInProgress Status = "in_progress"
-	StatusDone       Status = "done"
-)
-
-type Task struct {
-	ID          int64
-	TeamID      int64
-	Title       string
-	Description string
-	Status      Status
-	CreatedBy   int64
-	AssigneeID  *int64
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	ClosedAt    *time.Time
-	Version     int64
-}
-
-type History struct {
-	ID        int64
-	TaskID    int64
-	ChangedBy int64
-	Changes   json.RawMessage
-	CreatedAt time.Time
-}
-
-type CreateInput struct {
-	TeamID      int64
-	Title       string
-	Description string
-	Status      Status
-	AssigneeID  *int64
-}
-
-type UpdateInput struct {
-	Version         int64
-	Title           *string
-	Description     *string
-	Status          *Status
-	AssigneeID      *int64
-	AssigneeIDIsSet bool
-}
-
-type Filter struct {
-	TeamID     int64
-	Status     *Status
-	AssigneeID *int64
-	Limit      int
-	Offset     int
-}
-
-type Repository interface {
-	CreateWithHistory(context.Context, Task, int64, json.RawMessage) (Task, error)
-	FindByID(context.Context, int64) (Task, error)
-	List(context.Context, Filter) ([]Task, error)
-	UpdateWithHistory(context.Context, Task, int64, json.RawMessage) (Task, error)
-	SoftDeleteWithHistory(context.Context, int64, int64, int64, time.Time, json.RawMessage) error
-	ListHistory(context.Context, int64) ([]History, error)
-}
-
-type ListCache interface {
-	Get(context.Context, Filter) ([]Task, string, bool, error)
-	Set(context.Context, Filter, string, []Task) error
-	InvalidateTeam(context.Context, int64) error
-}
-
-type MembershipReader interface {
-	MemberRole(context.Context, int64, int64) (team.Role, error)
-}
 
 type Service struct {
 	repository  Repository
@@ -458,44 +368,10 @@ func isValidStatus(status Status) bool {
 	return status == StatusTodo || status == StatusInProgress || status == StatusDone
 }
 
-func marshalChanges(changes map[string]FieldChange) (json.RawMessage, error) {
-	encodedChanges, err := json.Marshal(changes)
-	if err != nil {
-		return nil, fmt.Errorf("marshal task changes: %w", err)
-	}
-
-	return encodedChanges, nil
-}
-
 func sameOptionalInt64(left *int64, right *int64) bool {
 	if left == nil || right == nil {
 		return left == right
 	}
 
 	return *left == *right
-}
-
-type FieldChange struct {
-	Old any `json:"old"`
-	New any `json:"new"`
-}
-
-type taskSnapshot struct {
-	TeamID      int64  `json:"team_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      Status `json:"status"`
-	CreatedBy   int64  `json:"created_by"`
-	AssigneeID  *int64 `json:"assignee_id"`
-}
-
-func snapshot(task Task) taskSnapshot {
-	return taskSnapshot{
-		TeamID:      task.TeamID,
-		Title:       task.Title,
-		Description: task.Description,
-		Status:      task.Status,
-		CreatedBy:   task.CreatedBy,
-		AssigneeID:  task.AssigneeID,
-	}
 }

@@ -10,35 +10,6 @@ import (
 	"github.com/virtuxa/tz_task_manager/internal/team"
 )
 
-const maxContentLength = 5000
-
-var (
-	ErrInvalidInput = errors.New("invalid comment input")
-	ErrForbidden    = errors.New("comment action is forbidden")
-	ErrNotFound     = errors.New("comment task not found")
-)
-
-type Comment struct {
-	ID        int64
-	TaskID    int64
-	UserID    int64
-	Content   string
-	CreatedAt time.Time
-}
-
-type Repository interface {
-	Create(context.Context, Comment) (Comment, error)
-	List(context.Context, int64) ([]Comment, error)
-}
-
-type TaskReader interface {
-	FindByID(context.Context, int64) (task.Task, error)
-}
-
-type MembershipReader interface {
-	MemberRole(context.Context, int64, int64) (team.Role, error)
-}
-
 type Service struct {
 	repository  Repository
 	tasks       TaskReader

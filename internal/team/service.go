@@ -4,58 +4,9 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/virtuxa/tz_task_manager/internal/user"
 )
-
-const maxNameLength = 100
-
-var (
-	ErrInvalidInput          = errors.New("invalid team input")
-	ErrForbidden             = errors.New("team action is forbidden")
-	ErrNotFound              = errors.New("team not found")
-	ErrMemberNotFound        = errors.New("team member not found")
-	ErrAlreadyMember         = errors.New("user is already a team member")
-	ErrOpenAssignedTasks     = errors.New("member has open assigned tasks")
-	ErrOwnerMembershipChange = errors.New("owner membership cannot be changed")
-)
-
-type Role string
-
-const (
-	RoleOwner  Role = "owner"
-	RoleAdmin  Role = "admin"
-	RoleMember Role = "member"
-)
-
-type Team struct {
-	ID        int64
-	Name      string
-	CreatedBy int64
-	CreatedAt time.Time
-	Role      Role
-}
-
-type Member struct {
-	UserID int64
-	Role   Role
-}
-
-type Repository interface {
-	CreateWithOwner(context.Context, string, int64) (Team, error)
-	ListByUser(context.Context, int64) ([]Team, error)
-	MemberRole(context.Context, int64, int64) (Role, error)
-	AddMember(context.Context, int64, int64, Role) error
-	ChangeMemberRole(context.Context, int64, int64, Role) error
-	RemoveMember(context.Context, int64, int64) error
-	HasOpenAssignedTasks(context.Context, int64, int64) (bool, error)
-	Delete(context.Context, int64) error
-}
-
-type UserFinder interface {
-	FindByEmail(context.Context, string) (user.User, error)
-}
 
 type Service struct {
 	repository Repository

@@ -7,38 +7,6 @@ import (
 	"github.com/virtuxa/tz_task_manager/internal/team"
 )
 
-var (
-	ErrInvalidInput = errors.New("invalid stats input")
-	ErrForbidden    = errors.New("stats action is forbidden")
-)
-
-type StatusCount struct {
-	Status string
-	Count  int64
-}
-
-type AssigneeStat struct {
-	UserID           int64
-	Name             string
-	ClosedTasksCount int64
-}
-
-type Stats struct {
-	TeamID                      int64
-	TasksByStatus               []StatusCount
-	TopAssignees                []AssigneeStat
-	AverageCloseDurationSeconds float64
-	CommentsCount               int64
-}
-
-type Repository interface {
-	Get(context.Context, int64) (Stats, error)
-}
-
-type MembershipReader interface {
-	MemberRole(context.Context, int64, int64) (team.Role, error)
-}
-
 type Service struct {
 	repository  Repository
 	memberships MembershipReader

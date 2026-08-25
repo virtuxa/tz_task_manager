@@ -8,10 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const minSigningKeyLength = 32
-
-var ErrInvalidToken = errors.New("invalid token")
-
 type TokenManager struct {
 	signingKey []byte
 	ttl        time.Duration
