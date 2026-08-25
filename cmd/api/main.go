@@ -10,10 +10,15 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/virtuxa/tz_task_manager/internal/auth"
 	"github.com/virtuxa/tz_task_manager/internal/config"
 	"github.com/virtuxa/tz_task_manager/internal/database"
 	"github.com/virtuxa/tz_task_manager/internal/httpapi"
 	"github.com/virtuxa/tz_task_manager/internal/migration"
+	"github.com/virtuxa/tz_task_manager/internal/repository"
+	"github.com/virtuxa/tz_task_manager/internal/user"
 )
 
 const (
@@ -37,19 +42,34 @@ func run() error {
 	startupContext, cancelStartup := context.WithTimeout(context.Background(), startupTimeout)
 	defer cancelStartup()
 
-	database, err := database.OpenMySQL(startupContext, cfg.MySQLDSN)
+	mysqlDB, err := database.OpenMySQL(startupContext, cfg.MySQLDSN)
 	if err != nil {
 		return err
 	}
-	defer database.Close()
+	defer mysqlDB.Close()
 
-	if err := migration.Apply(startupContext, database); err != nil {
+	if err := migration.Apply(startupContext, mysqlDB); err != nil {
+		return err
+	}
+
+	passwords, err := auth.NewPasswordManager(bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	tokens, err := auth.NewTokenManager(cfg.JWTSecret, cfg.JWTTTL)
+	if err != nil {
+		return err
+	}
+
+	users, err := user.NewService(repository.NewMySQLUserRepository(mysqlDB), passwords, tokens)
+	if err != nil {
 		return err
 	}
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           httpapi.NewHandler(),
+		Handler:           httpapi.NewHandler(users),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
