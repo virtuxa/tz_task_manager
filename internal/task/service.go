@@ -89,6 +89,12 @@ type Repository interface {
 	ListHistory(context.Context, int64) ([]History, error)
 }
 
+type ListCache interface {
+	Get(context.Context, Filter) ([]Task, string, bool, error)
+	Set(context.Context, Filter, string, []Task) error
+	InvalidateTeam(context.Context, int64) error
+}
+
 type MembershipReader interface {
 	MemberRole(context.Context, int64, int64) (team.Role, error)
 }
@@ -96,10 +102,11 @@ type MembershipReader interface {
 type Service struct {
 	repository  Repository
 	memberships MembershipReader
+	cache       ListCache
 	now         func() time.Time
 }
 
-func NewService(repository Repository, memberships MembershipReader) (*Service, error) {
+func NewService(repository Repository, memberships MembershipReader, cache ListCache) (*Service, error) {
 	if repository == nil {
 		return nil, errors.New("task repository is required")
 	}
@@ -107,10 +114,14 @@ func NewService(repository Repository, memberships MembershipReader) (*Service, 
 	if memberships == nil {
 		return nil, errors.New("team membership reader is required")
 	}
+	if cache == nil {
+		return nil, errors.New("task list cache is required")
+	}
 
 	return &Service{
 		repository:  repository,
 		memberships: memberships,
+		cache:       cache,
 		now:         time.Now,
 	}, nil
 }
@@ -147,7 +158,13 @@ func (service *Service) Create(ctx context.Context, actorID int64, input CreateI
 		return Task{}, err
 	}
 
-	return service.repository.CreateWithHistory(ctx, task, actorID, changes)
+	createdTask, err := service.repository.CreateWithHistory(ctx, task, actorID, changes)
+	if err != nil {
+		return Task{}, err
+	}
+
+	_ = service.cache.InvalidateTeam(ctx, createdTask.TeamID)
+	return createdTask, nil
 }
 
 func (service *Service) List(ctx context.Context, actorID int64, filter Filter) ([]Task, error) {
@@ -173,7 +190,22 @@ func (service *Service) List(ctx context.Context, actorID int64, filter Filter) 
 		return nil, ErrInvalidInput
 	}
 
-	return service.repository.List(ctx, filter)
+	cachedTasks, cacheVersion, found, err := service.cache.Get(ctx, filter)
+	if err == nil && found {
+		return cachedTasks, nil
+	}
+	cacheAvailable := err == nil
+
+	tasks, err := service.repository.List(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if cacheAvailable {
+		_ = service.cache.Set(ctx, filter, cacheVersion, tasks)
+	}
+
+	return tasks, nil
 }
 
 func (service *Service) Update(ctx context.Context, actorID int64, taskID int64, input UpdateInput) (Task, error) {
@@ -216,7 +248,13 @@ func (service *Service) Update(ctx context.Context, actorID int64, taskID int64,
 		return Task{}, err
 	}
 
-	return service.repository.UpdateWithHistory(ctx, updated, actorID, encodedChanges)
+	updatedTask, err := service.repository.UpdateWithHistory(ctx, updated, actorID, encodedChanges)
+	if err != nil {
+		return Task{}, err
+	}
+
+	_ = service.cache.InvalidateTeam(ctx, updatedTask.TeamID)
+	return updatedTask, nil
 }
 
 func (service *Service) Delete(ctx context.Context, actorID int64, taskID int64) error {
@@ -253,7 +291,12 @@ func (service *Service) Delete(ctx context.Context, actorID int64, taskID int64)
 		return err
 	}
 
-	return service.repository.SoftDeleteWithHistory(ctx, current.ID, current.Version, actorID, deletedAt, changes)
+	if err := service.repository.SoftDeleteWithHistory(ctx, current.ID, current.Version, actorID, deletedAt, changes); err != nil {
+		return err
+	}
+
+	_ = service.cache.InvalidateTeam(ctx, current.TeamID)
+	return nil
 }
 
 func (service *Service) History(ctx context.Context, actorID int64, taskID int64) ([]History, error) {

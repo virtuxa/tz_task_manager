@@ -107,7 +107,7 @@ func TestServiceDeleteAllowsCreator(t *testing.T) {
 func newTestService(t *testing.T, repository Repository, roles map[int64]team.Role) *Service {
 	t.Helper()
 
-	service, err := NewService(repository, membershipReaderStub{roles: roles})
+	service, err := NewService(repository, membershipReaderStub{roles: roles}, listCacheStub{})
 	if err != nil {
 		t.Fatalf("create task service: %v", err)
 	}
@@ -157,6 +157,20 @@ func (stub *repositoryStub) ListHistory(_ context.Context, _ int64) ([]History, 
 
 type membershipReaderStub struct {
 	roles map[int64]team.Role
+}
+
+type listCacheStub struct{}
+
+func (listCacheStub) Get(_ context.Context, _ Filter) ([]Task, string, bool, error) {
+	return nil, "0", false, nil
+}
+
+func (listCacheStub) Set(_ context.Context, _ Filter, _ string, _ []Task) error {
+	return nil
+}
+
+func (listCacheStub) InvalidateTeam(_ context.Context, _ int64) error {
+	return nil
 }
 
 func (stub membershipReaderStub) MemberRole(_ context.Context, _ int64, userID int64) (team.Role, error) {

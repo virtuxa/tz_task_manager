@@ -8,17 +8,19 @@ import (
 )
 
 const (
-	httpAddressEnv = "HTTP_ADDR"
-	mysqlDSNEnv    = "MYSQL_DSN"
-	jwtSecretEnv   = "JWT_SECRET"
-	jwtTTLEnv      = "JWT_TTL"
+	httpAddressEnv  = "HTTP_ADDR"
+	mysqlDSNEnv     = "MYSQL_DSN"
+	redisAddressEnv = "REDIS_ADDR"
+	jwtSecretEnv    = "JWT_SECRET"
+	jwtTTLEnv       = "JWT_TTL"
 )
 
 type Config struct {
-	HTTPAddress string
-	MySQLDSN    string
-	JWTSecret   string
-	JWTTTL      time.Duration
+	HTTPAddress  string
+	MySQLDSN     string
+	RedisAddress string
+	JWTSecret    string
+	JWTTTL       time.Duration
 }
 
 func Load() (Config, error) {
@@ -28,6 +30,11 @@ func Load() (Config, error) {
 	}
 
 	mysqlDSN, err := requiredEnv(mysqlDSNEnv)
+	if err != nil {
+		return Config{}, err
+	}
+
+	redisAddress, err := requiredEnv(redisAddressEnv)
 	if err != nil {
 		return Config{}, err
 	}
@@ -48,10 +55,11 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		HTTPAddress: httpAddress,
-		MySQLDSN:    mysqlDSN,
-		JWTSecret:   jwtSecret,
-		JWTTTL:      jwtTTL,
+		HTTPAddress:  httpAddress,
+		MySQLDSN:     mysqlDSN,
+		RedisAddress: redisAddress,
+		JWTSecret:    jwtSecret,
+		JWTTTL:       jwtTTL,
 	}, nil
 }
 

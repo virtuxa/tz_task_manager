@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/virtuxa/tz_task_manager/internal/auth"
+	"github.com/virtuxa/tz_task_manager/internal/cache"
 	"github.com/virtuxa/tz_task_manager/internal/comment"
 	"github.com/virtuxa/tz_task_manager/internal/config"
 	"github.com/virtuxa/tz_task_manager/internal/database"
@@ -55,6 +56,12 @@ func run() error {
 		return err
 	}
 
+	redisClient, err := cache.OpenRedis(startupContext, cfg.RedisAddress)
+	if err != nil {
+		return err
+	}
+	defer redisClient.Close()
+
 	passwords, err := auth.NewPasswordManager(bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -78,7 +85,7 @@ func run() error {
 	}
 
 	taskRepository := repository.NewMySQLTaskRepository(mysqlDB)
-	tasks, err := task.NewService(taskRepository, teamRepository)
+	tasks, err := task.NewService(taskRepository, teamRepository, cache.NewTaskListCache(redisClient, 5*time.Minute))
 	if err != nil {
 		return err
 	}

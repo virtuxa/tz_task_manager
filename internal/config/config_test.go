@@ -5,6 +5,7 @@ import "testing"
 func TestLoad(t *testing.T) {
 	t.Setenv(httpAddressEnv, ":8080")
 	t.Setenv(mysqlDSNEnv, "user:password@tcp(localhost:3306)/task_manager")
+	t.Setenv(redisAddressEnv, "localhost:6379")
 	t.Setenv(jwtSecretEnv, "test-signing-key-with-at-least-thirty-two-bytes")
 	t.Setenv(jwtTTLEnv, "24h")
 
@@ -21,6 +22,10 @@ func TestLoad(t *testing.T) {
 		t.Fatalf("MySQL DSN = %q", config.MySQLDSN)
 	}
 
+	if config.RedisAddress != "localhost:6379" {
+		t.Fatalf("Redis address = %q", config.RedisAddress)
+	}
+
 	if config.JWTSecret != "test-signing-key-with-at-least-thirty-two-bytes" {
 		t.Fatalf("JWT secret = %q", config.JWTSecret)
 	}
@@ -33,6 +38,7 @@ func TestLoad(t *testing.T) {
 func TestLoadRequiresMySQLDSN(t *testing.T) {
 	t.Setenv(httpAddressEnv, ":8080")
 	t.Setenv(mysqlDSNEnv, "")
+	t.Setenv(redisAddressEnv, "localhost:6379")
 	t.Setenv(jwtSecretEnv, "test-signing-key-with-at-least-thirty-two-bytes")
 	t.Setenv(jwtTTLEnv, "24h")
 
