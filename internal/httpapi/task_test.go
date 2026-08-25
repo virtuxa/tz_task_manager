@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/virtuxa/tz_task_manager/internal/comment"
 	"github.com/virtuxa/tz_task_manager/internal/task"
 )
 
@@ -68,4 +69,14 @@ func (taskServiceStub) Delete(_ context.Context, _ int64, _ int64) error {
 
 func (taskServiceStub) History(_ context.Context, _ int64, _ int64) ([]task.History, error) {
 	return []task.History{}, nil
+}
+
+type commentServiceStub struct{}
+
+func (commentServiceStub) Create(_ context.Context, _ int64, _ int64, content string) (comment.Comment, error) {
+	return comment.Comment{ID: 1, Content: content}, nil
+}
+
+func (commentServiceStub) List(_ context.Context, _ int64, _ int64) ([]comment.Comment, error) {
+	return []comment.Comment{}, nil
 }

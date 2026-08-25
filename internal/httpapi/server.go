@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/virtuxa/tz_task_manager/internal/comment"
 	"github.com/virtuxa/tz_task_manager/internal/task"
 	"github.com/virtuxa/tz_task_manager/internal/team"
 	"github.com/virtuxa/tz_task_manager/internal/user"
@@ -35,7 +36,12 @@ type TaskService interface {
 	History(context.Context, int64, int64) ([]task.History, error)
 }
 
-func NewHandler(authentication AuthenticationService, teams TeamService, tasks TaskService, tokens TokenParser) http.Handler {
+type CommentService interface {
+	Create(context.Context, int64, int64, string) (comment.Comment, error)
+	List(context.Context, int64, int64) ([]comment.Comment, error)
+}
+
+func NewHandler(authentication AuthenticationService, teams TeamService, tasks TaskService, comments CommentService, tokens TokenParser) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health)
 
@@ -58,6 +64,10 @@ func NewHandler(authentication AuthenticationService, teams TeamService, tasks T
 	mux.Handle("PUT /api/v1/tasks/{taskID}", protected(http.HandlerFunc(taskHandler.update)))
 	mux.Handle("DELETE /api/v1/tasks/{taskID}", protected(http.HandlerFunc(taskHandler.delete)))
 	mux.Handle("GET /api/v1/tasks/{taskID}/history", protected(http.HandlerFunc(taskHandler.history)))
+
+	commentHandler := newCommentHandler(comments)
+	mux.Handle("POST /api/v1/tasks/{taskID}/comments", protected(http.HandlerFunc(commentHandler.create)))
+	mux.Handle("GET /api/v1/tasks/{taskID}/comments", protected(http.HandlerFunc(commentHandler.list)))
 
 	return mux
 }

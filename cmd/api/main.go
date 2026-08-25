@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/virtuxa/tz_task_manager/internal/auth"
+	"github.com/virtuxa/tz_task_manager/internal/comment"
 	"github.com/virtuxa/tz_task_manager/internal/config"
 	"github.com/virtuxa/tz_task_manager/internal/database"
 	"github.com/virtuxa/tz_task_manager/internal/httpapi"
@@ -76,14 +77,20 @@ func run() error {
 		return err
 	}
 
-	tasks, err := task.NewService(repository.NewMySQLTaskRepository(mysqlDB), teamRepository)
+	taskRepository := repository.NewMySQLTaskRepository(mysqlDB)
+	tasks, err := task.NewService(taskRepository, teamRepository)
+	if err != nil {
+		return err
+	}
+
+	comments, err := comment.NewService(repository.NewMySQLCommentRepository(mysqlDB), taskRepository, teamRepository)
 	if err != nil {
 		return err
 	}
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           httpapi.NewHandler(users, teams, tasks, tokens),
+		Handler:           httpapi.NewHandler(users, teams, tasks, comments, tokens),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
