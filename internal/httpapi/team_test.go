@@ -51,7 +51,7 @@ func TestCreateTeamRejectsInvalidToken(t *testing.T) {
 }
 
 func newTestHandler() http.Handler {
-	return NewHandler(authenticationServiceStub{}, teamServiceStub{}, tokenParserStub{})
+	return NewHandler(authenticationServiceStub{}, teamServiceStub{}, taskServiceStub{}, tokenParserStub{})
 }
 
 type teamServiceStub struct{}
