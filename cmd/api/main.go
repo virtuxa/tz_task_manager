@@ -18,6 +18,7 @@ import (
 	"github.com/virtuxa/tz_task_manager/internal/httpapi"
 	"github.com/virtuxa/tz_task_manager/internal/migration"
 	"github.com/virtuxa/tz_task_manager/internal/repository"
+	"github.com/virtuxa/tz_task_manager/internal/team"
 	"github.com/virtuxa/tz_task_manager/internal/user"
 )
 
@@ -62,14 +63,20 @@ func run() error {
 		return err
 	}
 
-	users, err := user.NewService(repository.NewMySQLUserRepository(mysqlDB), passwords, tokens)
+	userRepository := repository.NewMySQLUserRepository(mysqlDB)
+	users, err := user.NewService(userRepository, passwords, tokens)
+	if err != nil {
+		return err
+	}
+
+	teams, err := team.NewService(repository.NewMySQLTeamRepository(mysqlDB), userRepository)
 	if err != nil {
 		return err
 	}
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           httpapi.NewHandler(users),
+		Handler:           httpapi.NewHandler(users, teams, tokens),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/virtuxa/tz_task_manager/internal/team"
 	"github.com/virtuxa/tz_task_manager/internal/user"
 )
 
@@ -12,13 +13,35 @@ type AuthenticationService interface {
 	Login(context.Context, user.LoginInput) (user.LoginResult, error)
 }
 
-func NewHandler(authentication AuthenticationService) http.Handler {
+type TeamService interface {
+	Create(context.Context, int64, string) (team.Team, error)
+	List(context.Context, int64) ([]team.Team, error)
+	Invite(context.Context, int64, int64, string, team.Role) error
+	ChangeRole(context.Context, int64, int64, int64, team.Role) error
+	RemoveMember(context.Context, int64, int64, int64) error
+	Delete(context.Context, int64, int64) error
+}
+
+type TokenParser interface {
+	Parse(string) (int64, error)
+}
+
+func NewHandler(authentication AuthenticationService, teams TeamService, tokens TokenParser) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health)
 
 	authenticationHandler := newAuthenticationHandler(authentication)
 	mux.HandleFunc("POST /api/v1/register", authenticationHandler.register)
 	mux.HandleFunc("POST /api/v1/login", authenticationHandler.login)
+
+	teamHandler := newTeamHandler(teams)
+	protected := requireAuthentication(tokens)
+	mux.Handle("POST /api/v1/teams", protected(http.HandlerFunc(teamHandler.create)))
+	mux.Handle("GET /api/v1/teams", protected(http.HandlerFunc(teamHandler.list)))
+	mux.Handle("POST /api/v1/teams/{teamID}/invite", protected(http.HandlerFunc(teamHandler.invite)))
+	mux.Handle("PATCH /api/v1/teams/{teamID}/members/{userID}", protected(http.HandlerFunc(teamHandler.changeRole)))
+	mux.Handle("DELETE /api/v1/teams/{teamID}/members/{userID}", protected(http.HandlerFunc(teamHandler.removeMember)))
+	mux.Handle("DELETE /api/v1/teams/{teamID}", protected(http.HandlerFunc(teamHandler.delete)))
 
 	return mux
 }
