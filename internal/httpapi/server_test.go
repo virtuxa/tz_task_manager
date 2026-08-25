@@ -14,7 +14,7 @@ func TestHealth(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/health", nil)
 	response := httptest.NewRecorder()
 
-	NewHandler(authenticationServiceStub{}, teamServiceStub{}, taskServiceStub{}, commentServiceStub{}, tokenParserStub{}).ServeHTTP(response, request)
+	NewHandler(authenticationServiceStub{}, teamServiceStub{}, taskServiceStub{}, commentServiceStub{}, statsServiceStub{}, tokenParserStub{}).ServeHTTP(response, request)
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("status code = %d, want %d", response.Code, http.StatusOK)
@@ -35,7 +35,7 @@ func TestRegister(t *testing.T) {
 
 	NewHandler(authenticationServiceStub{
 		registeredUser: user.User{ID: 5, Email: "user@example.com", Name: "Анна"},
-	}, teamServiceStub{}, taskServiceStub{}, commentServiceStub{}, tokenParserStub{}).ServeHTTP(response, request)
+	}, teamServiceStub{}, taskServiceStub{}, commentServiceStub{}, statsServiceStub{}, tokenParserStub{}).ServeHTTP(response, request)
 
 	if response.Code != http.StatusCreated {
 		t.Fatalf("status code = %d, want %d", response.Code, http.StatusCreated)
@@ -50,7 +50,7 @@ func TestLoginRejectsInvalidCredentials(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/login", strings.NewReader(`{"email":"user@example.com","password":"wrong"}`))
 	response := httptest.NewRecorder()
 
-	NewHandler(authenticationServiceStub{loginError: user.ErrInvalidCredentials}, teamServiceStub{}, taskServiceStub{}, commentServiceStub{}, tokenParserStub{}).ServeHTTP(response, request)
+	NewHandler(authenticationServiceStub{loginError: user.ErrInvalidCredentials}, teamServiceStub{}, taskServiceStub{}, commentServiceStub{}, statsServiceStub{}, tokenParserStub{}).ServeHTTP(response, request)
 
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("status code = %d, want %d", response.Code, http.StatusUnauthorized)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/virtuxa/tz_task_manager/internal/comment"
+	"github.com/virtuxa/tz_task_manager/internal/stats"
 	"github.com/virtuxa/tz_task_manager/internal/task"
 	"github.com/virtuxa/tz_task_manager/internal/team"
 	"github.com/virtuxa/tz_task_manager/internal/user"
@@ -41,7 +42,11 @@ type CommentService interface {
 	List(context.Context, int64, int64) ([]comment.Comment, error)
 }
 
-func NewHandler(authentication AuthenticationService, teams TeamService, tasks TaskService, comments CommentService, tokens TokenParser) http.Handler {
+type StatsService interface {
+	Get(context.Context, int64, int64) (stats.Stats, error)
+}
+
+func NewHandler(authentication AuthenticationService, teams TeamService, tasks TaskService, comments CommentService, statistics StatsService, tokens TokenParser) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health)
 
@@ -57,6 +62,9 @@ func NewHandler(authentication AuthenticationService, teams TeamService, tasks T
 	mux.Handle("PATCH /api/v1/teams/{teamID}/members/{userID}", protected(http.HandlerFunc(teamHandler.changeRole)))
 	mux.Handle("DELETE /api/v1/teams/{teamID}/members/{userID}", protected(http.HandlerFunc(teamHandler.removeMember)))
 	mux.Handle("DELETE /api/v1/teams/{teamID}", protected(http.HandlerFunc(teamHandler.delete)))
+
+	statsHandler := newStatsHandler(statistics)
+	mux.Handle("GET /api/v1/teams/{teamID}/stats", protected(http.HandlerFunc(statsHandler.get)))
 
 	taskHandler := newTaskHandler(tasks)
 	mux.Handle("POST /api/v1/tasks", protected(http.HandlerFunc(taskHandler.create)))
