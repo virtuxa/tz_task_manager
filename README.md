@@ -37,6 +37,12 @@ Invoke-RestMethod http://localhost:8080/health
 
 При изменении параметров MySQL в `.env` нужно согласованно изменить `MYSQL_DSN`
 
+## Логи
+
+API пишет JSON-логи в stdout
+
+Для HTTP-запроса логируются метод, путь, статус, длительность, размер ответа и `X-Request-ID` при наличии
+
 ## Миграции
 
 Миграции лежат в `internal/migration/*.up.sql`

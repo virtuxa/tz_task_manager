@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,8 +32,10 @@ const (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	if err := run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Printf("api stopped with error: %v", err)
+		slog.Error("api stopped with error", "error", err)
 		os.Exit(1)
 	}
 }
@@ -112,7 +114,7 @@ func run() error {
 
 	serverErrors := make(chan error, 1)
 	go func() {
-		log.Printf("api listening on %s", cfg.HTTPAddress)
+		slog.Info("api listening", "address", cfg.HTTPAddress)
 		serverErrors <- server.ListenAndServe()
 	}()
 
@@ -120,9 +122,15 @@ func run() error {
 	case err := <-serverErrors:
 		return err
 	case <-stopContext.Done():
+		slog.Info("api shutdown started")
 		shutdownContext, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
-		return server.Shutdown(shutdownContext)
+		err := server.Shutdown(shutdownContext)
+		if err == nil {
+			slog.Info("api stopped")
+		}
+
+		return err
 	}
 }

@@ -1,6 +1,9 @@
 package httpapi
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 func NewHandler(authentication AuthenticationService, teams TeamService, tasks TaskService, comments CommentService, statistics StatsService, tokens TokenParser) http.Handler {
 	mux := http.NewServeMux()
@@ -33,7 +36,7 @@ func NewHandler(authentication AuthenticationService, teams TeamService, tasks T
 	mux.Handle("POST /api/v1/tasks/{taskID}/comments", protected(http.HandlerFunc(commentHandler.create)))
 	mux.Handle("GET /api/v1/tasks/{taskID}/comments", protected(http.HandlerFunc(commentHandler.list)))
 
-	return mux
+	return withRequestLogging(slog.Default(), mux)
 }
 
 func health(writer http.ResponseWriter, _ *http.Request) {
