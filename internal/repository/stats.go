@@ -17,6 +17,7 @@ func NewMySQLStatsRepository(database *sql.DB) *MySQLStatsRepository {
 }
 
 func (repository *MySQLStatsRepository) Get(ctx context.Context, teamID int64) (stats.Stats, error) {
+	// Один CTE-запрос собирает все метрики только для указанной команды
 	rows, err := repository.database.QueryContext(ctx, `
 		WITH
 		team_tasks AS (

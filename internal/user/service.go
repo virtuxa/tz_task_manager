@@ -35,6 +35,7 @@ func NewService(repository Repository, passwords PasswordManager, tokens TokenIs
 }
 
 func (service *Service) Register(ctx context.Context, input RegisterInput) (User, error) {
+	// Проверяет данные и сохраняет пользователя с bcrypt-хешем пароля
 	email, name, err := validateRegistration(input)
 	if err != nil {
 		return User{}, err
@@ -58,6 +59,7 @@ func (service *Service) Register(ctx context.Context, input RegisterInput) (User
 }
 
 func (service *Service) Login(ctx context.Context, input LoginInput) (LoginResult, error) {
+	// Проверяет пароль и выдает access token
 	email, err := validateLogin(input)
 	if err != nil {
 		return LoginResult{}, err

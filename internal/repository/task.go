@@ -21,6 +21,7 @@ func NewMySQLTaskRepository(database *sql.DB) *MySQLTaskRepository {
 }
 
 func (repository *MySQLTaskRepository) CreateWithHistory(ctx context.Context, newTask task.Task, changedBy int64, changes json.RawMessage) (task.Task, error) {
+	// Сохраняет задачу и событие создания в одной транзакции
 	transaction, err := repository.database.BeginTx(ctx, nil)
 	if err != nil {
 		return task.Task{}, fmt.Errorf("begin create task: %w", err)
@@ -131,6 +132,7 @@ func (repository *MySQLTaskRepository) List(ctx context.Context, filter task.Fil
 }
 
 func (repository *MySQLTaskRepository) UpdateWithHistory(ctx context.Context, updatedTask task.Task, changedBy int64, changes json.RawMessage) (task.Task, error) {
+	// Обновляет актуальную версию задачи и историю одной транзакцией
 	transaction, err := repository.database.BeginTx(ctx, nil)
 	if err != nil {
 		return task.Task{}, fmt.Errorf("begin update task: %w", err)
@@ -179,6 +181,7 @@ func (repository *MySQLTaskRepository) UpdateWithHistory(ctx context.Context, up
 }
 
 func (repository *MySQLTaskRepository) SoftDeleteWithHistory(ctx context.Context, taskID int64, version int64, changedBy int64, deletedAt time.Time, changes json.RawMessage) error {
+	// Выполняет мягкое удаление и запись истории одной транзакцией
 	transaction, err := repository.database.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin delete task: %w", err)

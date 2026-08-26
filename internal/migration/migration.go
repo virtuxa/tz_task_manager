@@ -21,6 +21,7 @@ type migration struct {
 }
 
 func Apply(ctx context.Context, database *sql.DB) error {
+	// Применяет только миграции, которых нет в schema_migrations
 	if _, err := database.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			version BIGINT NOT NULL PRIMARY KEY,

@@ -9,6 +9,7 @@ import (
 type userIDContextKey struct{}
 
 func requireAuthentication(tokens TokenParser) func(http.Handler) http.Handler {
+	// Извлекает пользователя из Bearer-токена и передает его обработчику
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			rawToken, ok := bearerToken(request.Header.Get("Authorization"))

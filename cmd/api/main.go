@@ -41,6 +41,7 @@ func main() {
 }
 
 func run() error {
+	// Собирает зависимости и запускает HTTP-сервер
 	cfg, err := config.Load()
 	if err != nil {
 		return err

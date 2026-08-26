@@ -7,6 +7,7 @@ import (
 )
 
 func withRequestLogging(logger *slog.Logger, next http.Handler) http.Handler {
+	// Записывает итог каждого HTTP-запроса в структурированном виде
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		startedAt := time.Now()
 		recorder := &responseRecorder{ResponseWriter: writer}

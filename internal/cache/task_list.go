@@ -23,6 +23,7 @@ func NewTaskListCache(client *redis.Client, ttl time.Duration) *TaskListCache {
 }
 
 func (cache *TaskListCache) Get(ctx context.Context, filter task.Filter) ([]task.Task, string, bool, error) {
+	// Ищет список по ключу команды, фильтров и текущего поколения кеша
 	version, err := cache.teamVersion(ctx, filter.TeamID)
 	if err != nil {
 		return nil, "", false, err
@@ -58,6 +59,7 @@ func (cache *TaskListCache) Set(ctx context.Context, filter task.Filter, version
 }
 
 func (cache *TaskListCache) InvalidateTeam(ctx context.Context, teamID int64) error {
+	// Меняет поколение ключей, чтобы старые списки больше не использовались
 	if err := cache.client.Incr(ctx, cache.versionKey(teamID)).Err(); err != nil {
 		return fmt.Errorf("invalidate tasks cache: %w", err)
 	}

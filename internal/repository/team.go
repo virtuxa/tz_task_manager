@@ -19,6 +19,7 @@ func NewMySQLTeamRepository(database *sql.DB) *MySQLTeamRepository {
 }
 
 func (repository *MySQLTeamRepository) CreateWithOwner(ctx context.Context, name string, ownerID int64) (team.Team, error) {
+	// Создает команду и первого участника-владельца одной транзакцией
 	transaction, err := repository.database.BeginTx(ctx, nil)
 	if err != nil {
 		return team.Team{}, fmt.Errorf("begin create team: %w", err)

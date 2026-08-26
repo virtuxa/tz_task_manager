@@ -37,6 +37,7 @@ func NewService(repository Repository, tasks TaskReader, memberships MembershipR
 }
 
 func (service *Service) Create(ctx context.Context, actorID int64, taskID int64, content string) (Comment, error) {
+	// Добавляет комментарий только участнику команды задачи
 	if actorID <= 0 || taskID <= 0 {
 		return Comment{}, ErrInvalidInput
 	}
@@ -60,6 +61,7 @@ func (service *Service) Create(ctx context.Context, actorID int64, taskID int64,
 }
 
 func (service *Service) List(ctx context.Context, actorID int64, taskID int64) ([]Comment, error) {
+	// Возвращает комментарии после проверки доступа к задаче
 	if actorID <= 0 || taskID <= 0 {
 		return nil, ErrInvalidInput
 	}

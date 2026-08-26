@@ -6,6 +6,7 @@ import (
 )
 
 func NewHandler(authentication AuthenticationService, teams TeamService, tasks TaskService, comments CommentService, statistics StatsService, tokens TokenParser) http.Handler {
+	// Регистрирует маршруты и защищает приватные операции JWT
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health)
 

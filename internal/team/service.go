@@ -26,6 +26,7 @@ func NewService(repository Repository, users UserFinder) (*Service, error) {
 }
 
 func (service *Service) Create(ctx context.Context, ownerID int64, name string) (Team, error) {
+	// Создает команду вместе с участником-владельцем
 	if ownerID <= 0 {
 		return Team{}, ErrInvalidInput
 	}
@@ -47,6 +48,7 @@ func (service *Service) List(ctx context.Context, userID int64) ([]Team, error) 
 }
 
 func (service *Service) Invite(ctx context.Context, actorID int64, teamID int64, email string, role Role) error {
+	// Добавляет зарегистрированного пользователя с учетом роли инициатора
 	actorRole, err := service.actorRole(ctx, teamID, actorID)
 	if err != nil {
 		return err
@@ -81,6 +83,7 @@ func (service *Service) Invite(ctx context.Context, actorID int64, teamID int64,
 }
 
 func (service *Service) ChangeRole(ctx context.Context, actorID int64, teamID int64, memberID int64, role Role) error {
+	// Меняет роль участника, если действие выполняет владелец
 	if memberID <= 0 {
 		return ErrInvalidInput
 	}
@@ -117,6 +120,7 @@ func (service *Service) ChangeRole(ctx context.Context, actorID int64, teamID in
 }
 
 func (service *Service) RemoveMember(ctx context.Context, actorID int64, teamID int64, memberID int64) error {
+	// Не удаляет владельца и участника с незакрытыми назначенными задачами
 	if memberID <= 0 {
 		return ErrInvalidInput
 	}
@@ -154,6 +158,7 @@ func (service *Service) RemoveMember(ctx context.Context, actorID int64, teamID 
 }
 
 func (service *Service) Delete(ctx context.Context, actorID int64, teamID int64) error {
+	// Удаляет команду только по запросу владельца
 	actorRole, err := service.actorRole(ctx, teamID, actorID)
 	if err != nil {
 		return err

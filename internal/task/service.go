@@ -37,6 +37,7 @@ func NewService(repository Repository, memberships MembershipReader, cache ListC
 }
 
 func (service *Service) Create(ctx context.Context, actorID int64, input CreateInput) (Task, error) {
+	// Создает задачу и фиксирует исходное состояние в истории
 	if actorID <= 0 || input.TeamID <= 0 {
 		return Task{}, ErrInvalidInput
 	}
@@ -78,6 +79,7 @@ func (service *Service) Create(ctx context.Context, actorID int64, input CreateI
 }
 
 func (service *Service) List(ctx context.Context, actorID int64, filter Filter) ([]Task, error) {
+	// Возвращает задачи доступной команды из кеша или базы данных
 	if actorID <= 0 || filter.TeamID <= 0 {
 		return nil, ErrInvalidInput
 	}
@@ -119,6 +121,7 @@ func (service *Service) List(ctx context.Context, actorID int64, filter Filter) 
 }
 
 func (service *Service) Update(ctx context.Context, actorID int64, taskID int64, input UpdateInput) (Task, error) {
+	// Проверяет права и версию перед сохранением изменений
 	if actorID <= 0 || taskID <= 0 || input.Version <= 0 {
 		return Task{}, ErrInvalidInput
 	}
@@ -168,6 +171,7 @@ func (service *Service) Update(ctx context.Context, actorID int64, taskID int64,
 }
 
 func (service *Service) Delete(ctx context.Context, actorID int64, taskID int64) error {
+	// Помечает задачу удаленной и сохраняет событие в истории
 	if actorID <= 0 || taskID <= 0 {
 		return ErrInvalidInput
 	}
@@ -210,6 +214,7 @@ func (service *Service) Delete(ctx context.Context, actorID int64, taskID int64)
 }
 
 func (service *Service) History(ctx context.Context, actorID int64, taskID int64) ([]History, error) {
+	// Показывает историю только участникам команды задачи
 	if actorID <= 0 || taskID <= 0 {
 		return nil, ErrInvalidInput
 	}
@@ -353,6 +358,7 @@ func (service *Service) memberRole(ctx context.Context, teamID int64, userID int
 }
 
 func canUpdate(role team.Role, current Task, actorID int64, input UpdateInput) bool {
+	// Исполнитель может менять только статус назначенной ему задачи
 	if role == team.RoleOwner || role == team.RoleAdmin || current.CreatedBy == actorID {
 		return true
 	}

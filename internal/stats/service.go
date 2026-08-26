@@ -24,6 +24,7 @@ func NewService(repository Repository, memberships MembershipReader) (*Service, 
 }
 
 func (service *Service) Get(ctx context.Context, actorID int64, teamID int64) (Stats, error) {
+	// Открывает отчет владельцу или администратору команды
 	if actorID <= 0 || teamID <= 0 {
 		return Stats{}, ErrInvalidInput
 	}
